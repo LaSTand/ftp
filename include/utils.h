@@ -13,6 +13,9 @@ int send_path(int peer, char *file, uint32_t offset);
 int recv_file(int peer, FILE *f);
 int recv_path(int peer, char *file, uint32_t offset);
 
+int recv_data(int peer, char* buf, int bufsize);
+void trimstr(char *str, int n);
+
 int parse_number(const char *buf, uint32_t *number);
 int parse_addr_port(const char *buf, uint32_t *addr, uint16_t *port);
 char * parse_path(const char *buf);

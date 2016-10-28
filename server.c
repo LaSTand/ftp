@@ -80,11 +80,22 @@ void handle_session(int client) {
     char *p;            // tmp file path
     struct stat file_stat;      // file stat for time and size
     struct tm mdtime;
+// values for auth user.
+    char usrname[BUF_SIZE];
+    char passwd[BUF_SIZE];
+    char auth_buf[BUF_SIZE];
+    char * pch;
+    FILE * fd_auth;
+    char *line = NULL;
+    size_t num_read;                        
+    size_t len = 0;
+    unsigned int auth;
+
 
     while ((n=recv(client, buf, BUF_SIZE, MSG_PEEK)) > 0) {
         if (!running) break;
         buf[n] = '\0';
-        //info(1, "recved %d bytes: %s", n, buf);
+        info(1, "recved %d bytes: %s", n, buf);
         for (i=0; i<n; i++) {
             if (buf[i] == '\n') break;
         }
@@ -113,10 +124,58 @@ void handle_session(int client) {
                 send_str(client, FTP_HELP);
                 break;
             case USER:
-                send_str(client, FTP_NAMEOK);
+                /* Wait to recieve username */
+                //if ( (recv_data(client, auth_buf, sizeof(auth_buf)) ) == -1) {
+                //    perror("recv error\n"); 
+                //    exit(1);
+                //}
+                
+                p = parse_path(buf);
+                printf("%s\n", p);
+
+                fd_auth = fopen(".auth", "r");
+                if (fd_auth == NULL) {
+                    perror("file not found");
+                    exit(1);
+                }
+                while ((num_read = getline(&line, &len, fd_auth)) != -1) {
+                    memset(auth_buf, 0, BUF_SIZE);
+                    strcpy(auth_buf, line);
+                    pch = strtok (auth_buf, " ");
+                    printf("%s\n", pch);
+                    strcpy(usrname, pch);
+                    if (pch != NULL) {
+                        pch = strtok (NULL, " ");
+                        strcpy(passwd, pch);
+                        printf("%s\n", passwd);
+                    }
+                    // remove end of line and whitespace
+                    trimstr(passwd, (int)strlen(passwd));
+                    if ((strcmp(p, usrname)==0)) {
+                        auth = 1;
+                        break;
+                    }       
+                }
+                free(line); 
+                fclose(fd_auth);
+                if(auth == 1){
+                    send_str(client, FTP_NAMEOK);
+                    auth = 0;
+                }
                 break;
             case PASS:
-                send_str(client, FTP_LOGIN);
+                printf("%s\n", passwd);
+
+                p = parse_path(buf);
+                printf("%s\n", p);
+
+                if ((strcmp(p, passwd)==0)) {
+                    auth = 1;
+                }
+                if(auth == 1){
+                    send_str(client, FTP_LOGIN);
+                    auth = 0;
+                }
                 break;
             case PWD:
                 getcwd(cwd, sizeof(cwd));

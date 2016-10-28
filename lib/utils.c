@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+//#include <openssl/md5.h>
 
 #include "vars.h"
 #include "utils.h"
@@ -120,6 +121,16 @@ int recv_path(int peer, char *file, uint32_t offset) {
     return st < 0 ? st : cl;
 }
 
+
+void trimstr(char *str, int n)
+{
+    int i;
+    for (i = 0; i < n; i++) {
+        if (isspace(str[i])) str[i] = 0;
+        if (str[i] == '\n') str[i] = 0;
+    }
+}
+
 int parse_number(const char *buf, uint32_t *number) {
     int f = -1, i;
     char tmp[BUF_SIZE] = {0};
@@ -184,6 +195,7 @@ char * parse_path(const char *buf) {
     for (j=i; buf[j]!='\r' && buf[j]!= '\n' && j < BUF_SIZE; j++);
     memcpy(path, &buf[i], j-i);
     path[j-i] = 0;
+    //printf("1111%s\n", path);
     return path;
 }
 
