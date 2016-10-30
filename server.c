@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <errno.h>
+#include <openssl/md5.h>
 
 #include "vars.h"
 #include "zlog.h"
@@ -52,7 +53,34 @@ enum FTP_CMD parse_cmd(char *buf, int len) {
     }
     return INVALID;
 }
+/*
+md5 hasing function
+*/
+char * str2md5(const char * str, int length) {
+    int n;
+    MD5_CTX c;
+    unsigned char digest[16];
+    char *out = (char*)malloc(33);
 
+    MD5_Init(&c);
+
+    while (length > 0) {
+        if (length > 512) {
+            MD5_Update(&c, str, 512);
+        } else {
+            MD5_Update(&c, str, length);
+        }
+        length -= 512;
+        str += 512;
+    }
+
+    MD5_Final(digest, &c);
+
+    for (n = 0; n < 16; ++n) {
+        snprintf(&(out[n*2]), 16*2, "%02x", (unsigned int)digest[n]);
+    }
+    return out;
+}
 /**
  * handle a newly accepted ftp session
  *
@@ -83,14 +111,17 @@ void handle_session(int client) {
 // values for auth user.
     char usrname[BUF_SIZE];
     char passwd[BUF_SIZE];
+    unsigned char out[512]; // array for MD5 hash binary value
+    char * md5string;   // MD5 digest string(hex values)
     char auth_buf[BUF_SIZE];
     char * pch;
     FILE * fd_auth;
     char *line = NULL;
     size_t num_read;                        
     size_t len = 0;
-    unsigned int auth;
-
+    unsigned int auth = 0;
+    MD5_CTX c;
+    ssize_t pw_bytes;
 
     while ((n=recv(client, buf, BUF_SIZE, MSG_PEEK)) > 0) {
         if (!running) break;
@@ -124,16 +155,9 @@ void handle_session(int client) {
                 send_str(client, FTP_HELP);
                 break;
             case USER:
-                /* Wait to recieve username */
-                //if ( (recv_data(client, auth_buf, sizeof(auth_buf)) ) == -1) {
-                //    perror("recv error\n"); 
-                //    exit(1);
-                //}
-                
-                p = parse_path(buf);
-                printf("%s\n", p);
-
-                fd_auth = fopen(".auth", "r");
+                p = parse_path(buf);    // parse input data
+                //printf("%s\n", p);    // [Command] [Parameter]
+                fd_auth = fopen(".auth", "r");  // auth file
                 if (fd_auth == NULL) {
                     perror("file not found");
                     exit(1);
@@ -141,7 +165,7 @@ void handle_session(int client) {
                 while ((num_read = getline(&line, &len, fd_auth)) != -1) {
                     memset(auth_buf, 0, BUF_SIZE);
                     strcpy(auth_buf, line);
-                    pch = strtok (auth_buf, " ");
+                    pch = strtok (auth_buf, " ");   //trim str when meet " "
                     printf("%s\n", pch);
                     strcpy(usrname, pch);
                     if (pch != NULL) {
@@ -160,21 +184,25 @@ void handle_session(int client) {
                 fclose(fd_auth);
                 if(auth == 1){
                     send_str(client, FTP_NAMEOK);
-                    auth = 0;
+                    auth = 0;   // reset auth to 0 for passwd check
                 }
                 break;
             case PASS:
-                printf("%s\n", passwd);
+                // printf("%s\n", passwd); // check the passwd string 
+                p = parse_path(buf);    // parse again 
+                printf("p string : %s%s", p, p);      // check string
 
-                p = parse_path(buf);
-                printf("%s\n", p);
+                md5string = str2md5(p, strlen(p));
 
-                if ((strcmp(p, passwd)==0)) {
+                printf("result : %s\n", md5string);
+
+                if ((strcmp(md5string, passwd)==0)) {
                     auth = 1;
                 }
+                free(md5string);
                 if(auth == 1){
                     send_str(client, FTP_LOGIN);
-                    auth = 0;
+                    auth = 0;   //  reset auth to 0
                 }
                 break;
             case PWD:
