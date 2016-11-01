@@ -166,12 +166,12 @@ void handle_session(int client) {
                     memset(auth_buf, 0, BUF_SIZE);
                     strcpy(auth_buf, line);
                     pch = strtok (auth_buf, " ");   //trim str when meet " "
-                    printf("%s\n", pch);
+                    //printf("%s\n", pch);
                     strcpy(usrname, pch);
                     if (pch != NULL) {
                         pch = strtok (NULL, " ");
                         strcpy(passwd, pch);
-                        printf("%s\n", passwd);
+                        //printf("%s\n", passwd);
                     }
                     // remove end of line and whitespace
                     trimstr(passwd, (int)strlen(passwd));
@@ -190,11 +190,11 @@ void handle_session(int client) {
             case PASS:
                 // printf("%s\n", passwd); // check the passwd string 
                 p = parse_path(buf);    // parse again 
-                printf("p string : %s%s", p, p);      // check string
+                //printf("p string : %s%s", p, p);      // check string
 
                 md5string = str2md5(p, strlen(p));
 
-                printf("result : %s\n", md5string);
+                //printf("result : %s\n", md5string);
 
                 if ((strcmp(md5string, passwd)==0)) {
                     auth = 1;
