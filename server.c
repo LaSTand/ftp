@@ -111,12 +111,12 @@ void handle_session(int client) {
 // values for auth user.
     char usrname[BUF_SIZE];
     char passwd[BUF_SIZE];
-    unsigned char out[512]; // array for MD5 hash binary value
     char * md5string;   // MD5 digest string(hex values)
     char auth_buf[BUF_SIZE];
     char * pch;
+    char * input_name = NULL;
     FILE * fd_auth;
-    char *line = NULL;
+    char * line = NULL;
     size_t num_read;                        
     size_t len = 0;
     unsigned int auth = 0;
@@ -157,6 +157,7 @@ void handle_session(int client) {
             case USER:
                 p = parse_path(buf);    // parse input data
                 //printf("%s\n", p);    // [Command] [Parameter]
+                input_name = p;
                 fd_auth = fopen(".auth", "r");  // auth file
                 if (fd_auth == NULL) {
                     perror("file not found");
@@ -169,34 +170,24 @@ void handle_session(int client) {
                     //printf("%s\n", pch);
                     strcpy(usrname, pch);
                     if (pch != NULL) {
-                        pch = strtok (NULL, " ");
+                        pch = strtok (NULL, " ");                        
                         strcpy(passwd, pch);
-                        //printf("%s\n", passwd);
+                            //printf("%s\n", passwd);
                     }
                     // remove end of line and whitespace
                     trimstr(passwd, (int)strlen(passwd));
-                    if ((strcmp(p, usrname)==0)) {
-                        auth = 1;
-                        break;
-                    }       
                 }
                 free(line); 
                 fclose(fd_auth);
-                if(auth == 1){
-                    send_str(client, FTP_NAMEOK);
-                    auth = 0;   // reset auth to 0 for passwd check
-                }
+                send_str(client, FTP_NAMEOK);
                 break;
             case PASS:
                 // printf("%s\n", passwd); // check the passwd string 
                 p = parse_path(buf);    // parse again 
                 //printf("p string : %s%s", p, p);      // check string
-
                 md5string = str2md5(p, strlen(p));
-
                 //printf("result : %s\n", md5string);
-
-                if ((strcmp(md5string, passwd)==0)) {
+                if ( (strcmp(input_name, usrname) == 0) && (strcmp(md5string, passwd) == 0) ) {
                     auth = 1;
                 }
                 free(md5string);
@@ -204,6 +195,8 @@ void handle_session(int client) {
                     send_str(client, FTP_LOGIN);
                     auth = 0;   //  reset auth to 0
                 }
+                else if(auth == 0)
+                    send_str(client, FTP_ERR_LOGIN);
                 break;
             case PWD:
                 getcwd(cwd, sizeof(cwd));

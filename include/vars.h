@@ -72,6 +72,7 @@ extern struct ftp_cmd FTP_CMD_LIST[FTP_CMD_COUNT];
 #define RPL_LOGIN 230
 #define RPL_RESTOK 350
 #define RPL_RNFR 350
+#define RPL_ERR_LOGIN 430
 #define RPL_ERR_UNKWNCMD 500
 #define RPL_ERR_PARM 501
 #define RPL_ERR_IGN 202
@@ -108,6 +109,7 @@ extern struct ftp_cmd FTP_CMD_LIST[FTP_CMD_COUNT];
 #define FTP_RNFR W("RNFR success, waiting RNT", RPL_RNFR)
 #define FTP_RNTO W("RNTO success", RPL_RNTO)
 #define FTP_CMDNOIM W("command not implemented", RPL_CMDNOIM)
+#define FTP_ERR_LOGIN W("Invalid username or password", RPL_ERR_LOGIN)
 
 enum DATA_TYPE {
     TYPE_ASCII,
