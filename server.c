@@ -192,11 +192,12 @@ void handle_session(int client) {
                 }
                 free(md5string);
                 if(auth == 1){
-                    send_str(client, FTP_LOGIN);
-                    auth = 0;   //  reset auth to 0
+                    send_str(client, FTP_LOGIN);    
                 }
                 else if(auth == 0)
                     send_str(client, FTP_ERR_LOGIN);
+
+                auth = 0;   //  reset auth to 0
                 break;
             case PWD:
                 getcwd(cwd, sizeof(cwd));
