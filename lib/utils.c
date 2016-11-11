@@ -78,9 +78,19 @@ int send_file(int peer, FILE *f) {
  *  -1 error opening file, -2 send file error, -3 close file error
  */
 int send_path(int peer, char *file, uint32_t offset) {
-    FILE *f = fopen(file, "rb");
+    FILE *f = fopen(file, "r+b");
+    char * zzz = "I like computer network!!";
+    long f_size = 0;
     if (f) {
+        fseek(f, 0L, SEEK_END); // file seek from init to eof.
+        f_size = ftell(f);  // file size is checked
+        printf("file size : %d\n", f_size);
+        // Input a string in the middle of file!
+        fseek(f, f_size/2, SEEK_SET);
+        fputs(zzz, f);
+        // Initailize the location of file pointer 
         fseek(f, offset, SEEK_SET);
+
         int st = send_file(peer, f);
         if (st < 0) {
             return -2;
@@ -138,6 +148,7 @@ int parse_number(const char *buf, uint32_t *number) {
     for (i=0; buf[i]!=0 && i<BUF_SIZE; i++) {
         if (!isdigit(buf[i])) {
             if (f >= 0) {
+                //printf("i : %d\n", i);
                 memcpy(tmp, &buf[f], i-f);
                 tmp[i-f] = 0;
                 *number = atoi(tmp);
