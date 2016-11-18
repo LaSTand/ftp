@@ -105,14 +105,8 @@ int send_file2(int peer, FILE *f, long f_size) {
  */
 int send_path(int peer, char *file, uint32_t offset) {
     FILE *f = fopen(file, "rb");
-    long size = 0;
     if (f) {
-        fseek(f, 0L, SEEK_END); // file seek from init to eof.
-        size = ftell(f);  // file size is checked
-        printf("file size : %d\n", size);
-    
         fseek(f, offset, SEEK_SET);
-
         int st = send_file2(peer, f, size);
         if (st < 0) {
             return -2;
