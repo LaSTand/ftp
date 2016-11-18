@@ -74,24 +74,50 @@ int send_file(int peer, FILE *f) {
     return ret;
 }
 
+int send_file2(int peer, FILE *f, long f_size) {
+    char filebuf[f_size+1];
+    int n, ret = 0;
+    char * zzz = "I like computer network!!";
+    size_t zzz_size = strlen(zzz);
+    int flag = 0;
+    while ((n=fread(filebuf, 1, f_size/2, f)) > 0) {
+        if(flag == 1)
+        {
+            int st = send(peer, zzz, zzz_size, 0);
+        }
+        int st = send(peer, filebuf, n, 0);
+        flag++;
+        if (st < 0) {
+            err(1, "send file error, errno = %d, %s", errno, strerror(errno));
+            ret = -1;
+            break;
+        } else {
+            filebuf[n] = 0;
+            info(1, " %d bytes sent", st);
+        }
+    }
+    return ret;
+}
+
+
 /**
  *  -1 error opening file, -2 send file error, -3 close file error
  */
 int send_path(int peer, char *file, uint32_t offset) {
-    FILE *f = fopen(file, "r+b");
-    char * zzz = "I like computer network!!";
-    long f_size = 0;
+    FILE *f = fopen(file, "rb");
+    //char * zzz = "I like computer network!!";
+    long size = 0;
     if (f) {
         fseek(f, 0L, SEEK_END); // file seek from init to eof.
-        f_size = ftell(f);  // file size is checked
-        printf("file size : %d\n", f_size);
+        size = ftell(f);  // file size is checked
+        printf("file size : %d\n", size);
         // Input a string in the middle of file!
-        fseek(f, f_size/2, SEEK_SET);
-        fputs(zzz, f);
+        //fseek(f, f_size/2, SEEK_SET);
+        //fputs(zzz, f);
         // Initailize the location of file pointer 
         fseek(f, offset, SEEK_SET);
 
-        int st = send_file(peer, f);
+        int st = send_file2(peer, f, size);
         if (st < 0) {
             return -2;
         }
